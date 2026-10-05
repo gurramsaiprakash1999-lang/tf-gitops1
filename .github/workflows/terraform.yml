@@ -3,7 +3,7 @@ name: "Automated Terraform Workflow"
 on:
   push:
     branches:
-      - main
+      - gitopsb1
   workflow_dispatch:
     inputs:
       action:
