@@ -49,16 +49,22 @@ jobs:
       - name: Terraform Validate
         run: terraform validate
 
-      # 3. Preview Changes
+      # 3. Preview Changes (SKIPPED for destroy)
       - name: Terraform Plan
+        if: github.event_name == 'push'
         run: terraform plan
 
-      # 4. Apply Changes (Runs on git push or when manual trigger is 'apply')
+      # 4. Plan Destroy (ONLY for manual destroy trigger)
+      - name: Terraform Plan Destroy
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
+        run: terraform plan -destroy
+
+      # 5. Apply Changes (Runs on git push or when manual trigger is 'apply')
       - name: Terraform Apply
-        if: github.event_name == 'push' || github.event.inputs.action == 'apply'
+        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply')
         run: terraform apply -auto-approve
 
-      # 5. Destroy Resources (Runs ONLY when manually triggered as 'destroy')
+      # 6. Destroy Resources (Runs ONLY when manually triggered as 'destroy')
       - name: Terraform Destroy
         if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
-        run: terraform destroy -auto-approve -input=true
+        run: terraform destroy -auto-approve
