@@ -61,4 +61,4 @@ jobs:
       # 5. Destroy Resources (Runs ONLY when manually triggered as 'destroy')
       - name: Terraform Destroy
         if: github.event.inputs.action == 'destroy'
-        run: terraform destroy -auto-approve --force
+        run: terraform destroy -auto-approve
