@@ -1,0 +1,64 @@
+name: "Automated Terraform Workflow"
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Choose Terraform action to run"
+        required: true
+        default: "apply"
+        type: choice
+        options:
+          - apply
+          - destroy
+
+jobs:
+  terraform:
+    name: "Run Terraform in GitHub"
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Pull your repository code into the GitHub virtual runner
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Step 2: Install Terraform inside GitHub's runner
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.8.0
+
+      # Step 3: Authenticate with AWS using your GitHub Secrets
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      # --- ALL TERRAFORM COMMANDS ARE RUN HERE BY GITHUB ---
+
+      # 1. Initialize Terraform
+      - name: Terraform Init
+        run: terraform init
+
+      # 2. Validate Code Syntax
+      - name: Terraform Validate
+        run: terraform validate
+
+      # 3. Preview Changes
+      - name: Terraform Plan
+        run: terraform plan
+
+      # 4. Apply Changes (Runs on git push or when manual trigger is 'apply')
+      - name: Terraform Apply
+        if: github.event_name == 'push' || github.event.inputs.action == 'apply'
+        run: terraform apply -auto-approve
+
+      # 5. Destroy Resources (Runs ONLY when manually triggered as 'destroy')
+      - name: Terraform Destroy
+        if: github.event.inputs.action == 'destroy'
+        run: terraform destroy -auto-approve
